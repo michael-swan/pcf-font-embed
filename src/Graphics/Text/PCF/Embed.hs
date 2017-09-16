@@ -13,6 +13,7 @@ import System.IO.Unsafe
 import Foreign.ForeignPtr
 import GHC.Exts
 import Data.List
+import Data.ByteString.Unsafe
 import qualified Data.Vector.Storable as VS
 import qualified Data.ByteString.Lazy as B
 
@@ -38,7 +39,10 @@ embedPCFText file str = do
                                                      , LitE $ IntegerL $ fromIntegral glyph_width
                                                      , LitE $ IntegerL $ fromIntegral glyph_height
                                                      , LitE $ IntegerL $ fromIntegral glyph_pitch
-                                                     , LitE $ StringPrimL $ B.unpack glyph_bitmap ]) gs
+                                                     , VarE 'unsafePerformIO
+                                                           `AppE` (VarE 'unsafePackAddressLen
+                                                                 `AppE` LitE (IntegerL $ fromIntegral $ B.length glyph_bitmap)
+                                                                       `AppE` LitE (StringPrimL $ B.unpack glyph_bitmap))]) gs
                   , LitE $ IntegerL $ fromIntegral w
                   , LitE $ IntegerL $ fromIntegral h
                   , VarE 'unsafePerformIO
