@@ -1,7 +1,17 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RecordWildCards #-}
 
--- | __pcf-font-embed__ allows users to generate and embed text rendered using X11 PCF fonts at compile-time.
+-- | __pcf-font-embed__ allows users to render and embed text with X11 PCF fonts at compile-time.
+-- Perhaps the best use-case for this library is in generating textures for text rendering with
+-- accelerated graphics. For reference, here is a simple example of __pcf-font-embed__ in action:
+--
+-- > {-# LANGUAGE TemplateHaskell #-}
+-- > import Graphics.Text.PCF
+-- > import Graphics.Text.PCF.Embed
+-- >
+-- > -- | USAGE: program
+-- > main :: IO ()
+-- > main = putStrLn $ pcf_text_ascii $(embedPCFText "font.pcf.gz" "Hello!")
 module Graphics.Text.PCF.Embed (
         -- * Embedding
         embedPCFText
@@ -14,10 +24,11 @@ import Foreign.ForeignPtr
 import GHC.Exts
 import Data.List
 import Data.ByteString.Unsafe
+import Data.ByteString.Lazy (fromStrict)
 import qualified Data.Vector.Storable as VS
 import qualified Data.ByteString.Lazy as B
 
--- | Render text at compile time. The generated expression's type is PCFText(..).
+-- | Render text at compile time. The generated expression consists of a `PCFText`.
 embedPCFText :: FilePath -> String -> Q Exp
 embedPCFText file str = do
     PCFText gs w h img <- (runIO $ do
@@ -39,10 +50,11 @@ embedPCFText file str = do
                                                      , LitE $ IntegerL $ fromIntegral glyph_width
                                                      , LitE $ IntegerL $ fromIntegral glyph_height
                                                      , LitE $ IntegerL $ fromIntegral glyph_pitch
-                                                     , VarE 'unsafePerformIO
-                                                           `AppE` (VarE 'unsafePackAddressLen
-                                                                 `AppE` LitE (IntegerL $ fromIntegral $ B.length glyph_bitmap)
-                                                                       `AppE` LitE (StringPrimL $ B.unpack glyph_bitmap))]) gs
+                                                     , VarE 'fromStrict
+                                                           `AppE` (VarE 'unsafePerformIO
+                                                                 `AppE` (VarE 'unsafePackAddressLen
+                                                                       `AppE` LitE (IntegerL $ fromIntegral $ B.length glyph_bitmap)
+                                                                             `AppE` LitE (StringPrimL $ B.unpack glyph_bitmap)))]) gs
                   , LitE $ IntegerL $ fromIntegral w
                   , LitE $ IntegerL $ fromIntegral h
                   , VarE 'unsafePerformIO
