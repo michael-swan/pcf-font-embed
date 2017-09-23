@@ -39,7 +39,7 @@ packages:
 - '.'
 - location:
     git: git@github.com:michael-swan/pcf-font.git
-    commit: ec6a0ea265b285b6aa09d2041b4731c1317fedf0
+    commit: 46a57aa6f3679c29b6d5799ddbd3577036ad5801
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps: []

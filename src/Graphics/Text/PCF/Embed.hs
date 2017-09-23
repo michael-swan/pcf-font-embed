@@ -14,7 +14,8 @@
 -- > main = putStrLn $ pcf_text_ascii $(embedPCFText "font.pcf.gz" "Hello!")
 module Graphics.Text.PCF.Embed (
         -- * Embedding
-        embedPCFText
+        embedPCFText,
+        embedPCFTextColor
     ) where
 
 import Graphics.Text.PCF
@@ -25,18 +26,42 @@ import GHC.Exts
 import Data.List
 import Data.ByteString.Unsafe
 import Data.ByteString.Lazy (fromStrict)
+import Data.Word
 import qualified Data.Vector.Storable as VS
 import qualified Data.ByteString.Lazy as B
 
--- | Render text at compile time. The generated expression consists of a `PCFText`.
-embedPCFText :: FilePath -> String -> Q Exp
-embedPCFText file str = do
-    PCFText gs w h img <- (runIO $ do
+-- | Render text at compile time. Default opaque and blank colors of 0x00 and 0xFF are used respectively. The generated expression consists of a `PCFText`.
+embedPCFText :: FilePath
+             -- ^ Font to render with
+             -> String
+             -- ^ Text to render
+             -> Q Exp
+embedPCFText file str = genPCFTextCode =<< (runIO $ do
         pcf <- either fail return =<< loadPCF file
         case renderPCFText pcf str of
             Just ret -> return ret
             Nothing ->
                 fail "Failed to render texture atlas.")
+
+-- | Render text at compile time. The generated expression consists of a `PCFText`.
+embedPCFTextColor :: FilePath
+                  -- ^ Font to render with
+                  -> Word8
+                  -- ^ Opaque color value
+                  -> Word8
+                  -- ^ Blank color value
+                  -> String
+                  -- ^ Text to render
+                  -> Q Exp
+embedPCFTextColor file opaque blank str = genPCFTextCode =<< (runIO $ do
+        pcf <- either fail return =<< loadPCF file
+        case renderPCFTextColor pcf opaque blank str of
+            Just ret -> return ret
+            Nothing ->
+                fail "Failed to render texture atlas.")
+
+genPCFTextCode :: PCFText -> Q Exp
+genPCFTextCode (PCFText gs w h img) = do
     fp <- newName "fp"
     return $ foldl' AppE (ConE 'PCFText) $
                   [ ListE $ map (\PCFGlyph{..} ->
