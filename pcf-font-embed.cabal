@@ -1,5 +1,5 @@
 name:                pcf-font-embed
-version:             0.1.1.0
+version:             0.1.2.0
 synopsis:            Template Haskell for embedding text rendered using PCF fonts.
 description:         pcf-font-embed is a library for rendering X11 PCF fonts at compile-time and statically embedding those images into user programs.
 homepage:            https://github.com/michael-swan/pcf-font-embed
